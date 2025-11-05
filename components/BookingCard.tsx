@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Booking, User, Profile, Payment } from '@prisma/client'
+import { Booking, Profile, Payment } from '@prisma/client'
 import { format } from 'date-fns'
 import SafeImage from './SafeImage'
 import Link from 'next/link'
