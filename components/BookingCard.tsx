@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Booking, Profile, Payment } from '@prisma/client'
+import { Booking, Payment } from '@prisma/client'
 import { format } from 'date-fns'
 import SafeImage from './SafeImage'
 import Link from 'next/link'
@@ -13,7 +13,9 @@ interface BookingCardProps {
       id: string
       name: string | null
       image: string | null
-      profile: Profile | null
+      profile: {
+        location: string | null
+      } | null
     }
     client: {
       id: string
