@@ -9,8 +9,17 @@ import Link from 'next/link'
 
 interface BookingCardProps {
   booking: Booking & {
-    performer: User & { profile: Profile | null }
-    client: User
+    performer: {
+      id: string
+      name: string | null
+      image: string | null
+      profile: Profile | null
+    }
+    client: {
+      id: string
+      name: string | null
+      image: string | null
+    }
     payment: Payment | null
   }
   isPerformer: boolean
