@@ -6,44 +6,69 @@ import Navbar from '@/components/Navbar'
 import SafeImage from '@/components/SafeImage'
 
 export default async function Home() {
-  const session = await getServerSession(authOptions)
+  let session = null
+  let featuredPerformers: any[] = []
+  let totalPerformers = 0
+  let totalBookings = 0
 
-  // Fetch featured performers for showcase
-  const featuredPerformers = await prisma.profile.findMany({
-    where: {
-      featured: true,
-      verified: true,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
+  try {
+    session = await getServerSession(authOptions)
+
+    // Fetch featured performers for showcase
+    try {
+      featuredPerformers = await prisma.profile.findMany({
+        where: {
+          featured: true,
+          verified: true,
         },
-      },
-      content: {
-        where: { isPremium: false },
-        take: 1,
-        orderBy: { createdAt: 'desc' },
-      },
-      _count: {
-        select: {
-          favorites: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          content: {
+            where: { isPremium: false },
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+          },
+          _count: {
+            select: {
+              favorites: true,
+            },
+          },
         },
-      },
-    },
-    take: 6,
-  })
+        take: 6,
+      })
+    } catch (error) {
+      console.error('Error fetching featured performers:', error)
+      featuredPerformers = []
+    }
 
-  // Get stats
-  const totalPerformers = await prisma.profile.count({
-    where: { verified: true },
-  })
+    // Get stats
+    try {
+      totalPerformers = await prisma.profile.count({
+        where: { verified: true },
+      })
+    } catch (error) {
+      console.error('Error fetching total performers:', error)
+      totalPerformers = 0
+    }
 
-  const totalBookings = await prisma.booking.count({
-    where: { status: 'completed' },
-  })
+    try {
+      totalBookings = await prisma.booking.count({
+        where: { status: 'completed' },
+      })
+    } catch (error) {
+      console.error('Error fetching total bookings:', error)
+      totalBookings = 0
+    }
+  } catch (error) {
+    console.error('Error in Home component:', error)
+    // Continue rendering with empty data
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white">

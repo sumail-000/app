@@ -10,24 +10,36 @@ import SafeImage from '@/components/SafeImage'
 import SignOutButton from '@/components/SignOutButton'
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
+  let session
+  try {
+    session = await getServerSession(authOptions)
+  } catch (error) {
+    console.error('Error getting session:', error)
+    redirect('/auth/signin')
+  }
 
   if (!session) {
     redirect('/auth/signin')
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      profile: {
-        include: {
-          content: {
-            select: { id: true },
+  let user
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        profile: {
+          include: {
+            content: {
+              select: { id: true },
+            },
           },
         },
       },
-    },
-  })
+    })
+  } catch (error) {
+    console.error('Error fetching user:', error)
+    redirect('/auth/signin')
+  }
 
   if (!user) {
     redirect('/auth/signin')
@@ -41,179 +53,189 @@ export default async function DashboardPage() {
   let unreadMessages = 0
 
   if (isPerformer) {
-    const bookings = await prisma.booking.findMany({
-      where: { performerId: user.id },
-      include: {
-        client: { select: { name: true, image: true } },
-        payment: true,
-      },
-      orderBy: { date: 'desc' },
-      take: 5,
-    })
-
-    const totalBookings = await prisma.booking.count({
-      where: { performerId: user.id },
-    })
-
-    const pendingBookings = await prisma.booking.count({
-      where: { performerId: user.id, status: 'pending' },
-    })
-
-    const completedBookings = await prisma.booking.count({
-      where: { performerId: user.id, status: 'completed' },
-    })
-
-    const totalEarnings = await prisma.payment.aggregate({
-      where: {
-        userId: user.id,
-        status: 'completed',
-      },
-      _sum: { amount: true },
-    })
-
-    unreadMessages = await prisma.message.count({
-      where: {
-        receiverId: user.id,
-        read: false,
-      },
-    })
-
-    stats = [
-      {
-        title: 'Total Earnings',
-        value: `$${(totalEarnings._sum.amount || 0).toFixed(0)}`,
-        icon: (
-          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ),
-        href: '/dashboard/earnings',
-        color: 'green' as const,
-      },
-      {
-        title: 'Pending Bookings',
-        value: pendingBookings,
-        icon: (
-          <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        ),
-        href: '/dashboard/bookings',
-        color: 'yellow' as const,
-      },
-      {
-        title: 'Total Bookings',
-        value: totalBookings,
-        icon: (
-          <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        ),
-        href: '/dashboard/bookings',
-        color: 'blue' as const,
-      },
-      {
-        title: 'Unread Messages',
-        value: unreadMessages,
-        icon: (
-          <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        ),
-        href: '/dashboard/messages',
-        color: 'purple' as const,
-      },
-    ]
-
-    recentBookings = bookings
-  } else {
-    const bookings = await prisma.booking.findMany({
-      where: { clientId: user.id },
-      include: {
-        performer: { 
-          select: { 
-            name: true, 
-            image: true,
-            profile: { select: { location: true } },
-          },
+    try {
+      const bookings = await prisma.booking.findMany({
+        where: { performerId: user.id },
+        include: {
+          client: { select: { name: true, image: true } },
+          payment: true,
         },
-        payment: true,
-      },
-      orderBy: { date: 'desc' },
-      take: 5,
-    })
+        orderBy: { date: 'desc' },
+        take: 5,
+      })
 
-    const totalBookings = await prisma.booking.count({
-      where: { clientId: user.id },
-    })
+      const totalBookings = await prisma.booking.count({
+        where: { performerId: user.id },
+      }).catch(() => 0)
 
-    const upcomingBookings = await prisma.booking.count({
-      where: {
-        clientId: user.id,
-        status: { in: ['pending', 'confirmed'] },
-        date: { gte: new Date() },
-      },
-    })
+      const pendingBookings = await prisma.booking.count({
+        where: { performerId: user.id, status: 'pending' },
+      }).catch(() => 0)
 
-    const favoritesCount = await prisma.favorite.count({
-      where: { userId: user.id },
-    })
+      const completedBookings = await prisma.booking.count({
+        where: { performerId: user.id, status: 'completed' },
+      }).catch(() => 0)
 
-    unreadMessages = await prisma.message.count({
-      where: {
-        receiverId: user.id,
-        read: false,
-      },
-    })
+      const totalEarnings = await prisma.payment.aggregate({
+        where: {
+          userId: user.id,
+          status: 'completed',
+        },
+        _sum: { amount: true },
+      }).catch(() => ({ _sum: { amount: null } }))
 
-    stats = [
-      {
-        title: 'Upcoming Bookings',
-        value: upcomingBookings,
-        icon: (
-          <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        ),
-        href: '/dashboard/bookings',
-        color: 'blue' as const,
-      },
-      {
-        title: 'Total Bookings',
-        value: totalBookings,
-        icon: (
-          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        ),
-        href: '/dashboard/bookings',
-        color: 'green' as const,
-      },
-      {
-        title: 'Favorites',
-        value: favoritesCount,
-        icon: (
-          <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        ),
-        href: '/dashboard/favorites',
-        color: 'red' as const,
-      },
-      {
-        title: 'Unread Messages',
-        value: unreadMessages,
-        icon: (
-          <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        ),
-        href: '/dashboard/messages',
-        color: 'purple' as const,
-      },
-    ]
+      unreadMessages = await prisma.message.count({
+        where: {
+          receiverId: user.id,
+          read: false,
+        },
+      }).catch(() => 0)
 
-    recentBookings = bookings
+      stats = [
+        {
+          title: 'Total Earnings',
+          value: `$${(totalEarnings._sum.amount || 0).toFixed(0)}`,
+          icon: (
+            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          href: '/dashboard/earnings',
+          color: 'green' as const,
+        },
+        {
+          title: 'Pending Bookings',
+          value: pendingBookings,
+          icon: (
+            <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          ),
+          href: '/dashboard/bookings',
+          color: 'yellow' as const,
+        },
+        {
+          title: 'Total Bookings',
+          value: totalBookings,
+          icon: (
+            <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          ),
+          href: '/dashboard/bookings',
+          color: 'blue' as const,
+        },
+        {
+          title: 'Unread Messages',
+          value: unreadMessages,
+          icon: (
+            <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          ),
+          href: '/dashboard/messages',
+          color: 'purple' as const,
+        },
+      ]
+
+      recentBookings = bookings
+    } catch (error) {
+      console.error('Error fetching performer stats:', error)
+      // Use empty defaults
+    }
+  } else {
+    try {
+      const bookings = await prisma.booking.findMany({
+        where: { clientId: user.id },
+        include: {
+          performer: { 
+            select: { 
+              name: true, 
+              image: true,
+              profile: { select: { location: true } },
+            },
+          },
+          payment: true,
+        },
+        orderBy: { date: 'desc' },
+        take: 5,
+      }).catch(() => [])
+
+      const totalBookings = await prisma.booking.count({
+        where: { clientId: user.id },
+      }).catch(() => 0)
+
+      const upcomingBookings = await prisma.booking.count({
+        where: {
+          clientId: user.id,
+          status: { in: ['pending', 'confirmed'] },
+          date: { gte: new Date() },
+        },
+      }).catch(() => 0)
+
+      const favoritesCount = await prisma.favorite.count({
+        where: { userId: user.id },
+      }).catch(() => 0)
+
+      unreadMessages = await prisma.message.count({
+        where: {
+          receiverId: user.id,
+          read: false,
+        },
+      }).catch(() => 0)
+
+      stats = [
+        {
+          title: 'Upcoming Bookings',
+          value: upcomingBookings,
+          icon: (
+            <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          ),
+          href: '/dashboard/bookings',
+          color: 'blue' as const,
+        },
+        {
+          title: 'Total Bookings',
+          value: totalBookings,
+          icon: (
+            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          ),
+          href: '/dashboard/bookings',
+          color: 'green' as const,
+        },
+        {
+          title: 'Favorites',
+          value: favoritesCount,
+          icon: (
+            <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          ),
+          href: '/dashboard/favorites',
+          color: 'red' as const,
+        },
+        {
+          title: 'Unread Messages',
+          value: unreadMessages,
+          icon: (
+            <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          ),
+          href: '/dashboard/messages',
+          color: 'purple' as const,
+        },
+      ]
+
+      recentBookings = bookings
+    } catch (error) {
+      console.error('Error fetching client stats:', error)
+      // Use empty defaults
+    }
   }
 
   return (
