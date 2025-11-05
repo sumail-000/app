@@ -115,7 +115,12 @@ export default async function EarningsPage() {
 
         {payments.filter(p => p.status === 'completed').length > 0 && (
           <div className="mb-8">
-            <EarningsChart payments={payments} />
+            <EarningsChart payments={payments.map(p => ({
+              id: p.id,
+              amount: p.amount,
+              status: p.status,
+              createdAt: p.createdAt
+            }))} />
           </div>
         )}
 

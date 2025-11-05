@@ -6,7 +6,7 @@ interface Payment {
   id: string
   amount: number
   status: string
-  createdAt: string
+  createdAt: string | Date
 }
 
 interface EarningsChartProps {
