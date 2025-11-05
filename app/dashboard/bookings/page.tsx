@@ -106,7 +106,11 @@ export default async function BookingsPage() {
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   {upcomingBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} isPerformer={isPerformer} />
+                    <BookingCard 
+                      key={booking.id} 
+                      booking={booking as any} 
+                      isPerformer={isPerformer} 
+                    />
                   ))}
                 </div>
               </div>
@@ -121,7 +125,7 @@ export default async function BookingsPage() {
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   {pendingBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} isPerformer={isPerformer} />
+                    <BookingCard key={booking.id} booking={booking as any} isPerformer={isPerformer} />
                   ))}
                 </div>
               </div>
@@ -136,7 +140,7 @@ export default async function BookingsPage() {
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   {confirmedBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} isPerformer={isPerformer} />
+                    <BookingCard key={booking.id} booking={booking as any} isPerformer={isPerformer} />
                   ))}
                 </div>
               </div>
@@ -151,7 +155,7 @@ export default async function BookingsPage() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {completedBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} isPerformer={isPerformer} />
+                    <BookingCard key={booking.id} booking={booking as any} isPerformer={isPerformer} />
                   ))}
                 </div>
               </div>
@@ -166,7 +170,7 @@ export default async function BookingsPage() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60">
                   {cancelledBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} isPerformer={isPerformer} />
+                    <BookingCard key={booking.id} booking={booking as any} isPerformer={isPerformer} />
                   ))}
                 </div>
               </div>
