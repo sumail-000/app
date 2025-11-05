@@ -48,7 +48,13 @@ export default async function DashboardPage() {
   const isPerformer = user.role === 'PERFORMER'
 
   // Fetch stats for performers
-  let stats = []
+  let stats: Array<{
+    title: string
+    value: string | number
+    icon: React.ReactNode
+    href: string
+    color: 'blue' | 'green' | 'yellow' | 'purple' | 'red'
+  }> = []
   let recentBookings: any[] = []
   let unreadMessages = 0
 
