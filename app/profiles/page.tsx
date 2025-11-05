@@ -121,7 +121,7 @@ export default async function ProfilesPage() {
 
                     {services.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {services.slice(0, 2).map((service) => (
+                        {services.slice(0, 2).map((service: string) => (
                           <span
                             key={service}
                             className="text-xs bg-gray-700 px-2 py-1 rounded"

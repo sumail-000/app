@@ -26,12 +26,10 @@ export default async function MessagesPage() {
     distinct: ['senderId'],
   })
 
-  const partnerIds = [
-    ...new Set([
-      ...sentMessages.map((m) => m.receiverId),
-      ...receivedMessages.map((m) => m.senderId),
-    ]),
-  ]
+  const partnerIds = Array.from(new Set([
+    ...sentMessages.map((m) => m.receiverId),
+    ...receivedMessages.map((m) => m.senderId),
+  ]))
 
   const partners = await prisma.user.findMany({
     where: {

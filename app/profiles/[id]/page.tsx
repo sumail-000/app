@@ -171,7 +171,7 @@ export default async function ProfileDetailPage({ params }: { params: { id: stri
               <div className="bg-gray-800 p-6 rounded-lg">
                 <h2 className="text-2xl font-semibold mb-4">Services</h2>
                 <div className="space-y-3">
-                  {services.map((service) => {
+                  {services.map((service: string) => {
                     const rateKey = service.toLowerCase().replace(/\s+/g, '')
                     const rate = rates[rateKey] || rates[service]
                     return (
